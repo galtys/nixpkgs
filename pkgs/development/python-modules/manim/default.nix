@@ -33,6 +33,7 @@
   pygments,
   rich,
   scipy,
+  sympy,
   screeninfo,
   skia-pathops,
   srt,
@@ -233,6 +234,7 @@ buildPythonPackage rec {
     pygments
     rich
     scipy
+    sympy
     screeninfo
     skia-pathops
     srt
