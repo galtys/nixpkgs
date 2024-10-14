@@ -18,10 +18,17 @@ let
     done
     rm -r packages/grafana-e2e
   '';
+
+  # Grafana seems to just set it to the latest version available
+  # nowadays.
+  patchGoVersion = ''
+    substituteInPlace go.{mod,work} pkg/build/go.mod \
+      --replace-fail "go 1.22.7" "go 1.22.6"
+  '';
 in
 buildGoModule rec {
   pname = "grafana";
-  version = "10.4.3";
+  version = "10.4.10";
 
   subPackages = [ "pkg/cmd/grafana" "pkg/cmd/grafana-server" "pkg/cmd/grafana-cli" ];
 
@@ -29,7 +36,7 @@ buildGoModule rec {
     owner = "grafana";
     repo = "grafana";
     rev = "v${version}";
-    hash = "sha256-AII8NNCS3ss4QjMcDBPNWm/lKcoA1D3hW7iqFK4gQOY=";
+    hash = "sha256-qbKrSMhV2Zdqt3N8bUOn7sUuz9lHl2BbMy/Y6ymK/NY=";
   };
 
   # borrowed from: https://github.com/NixOS/nixpkgs/blob/d70d9425f49f9aba3c49e2c389fe6d42bac8c5b0/pkgs/development/tools/analysis/snyk/default.nix#L20-L22
@@ -49,6 +56,7 @@ buildGoModule rec {
     ] ++ lib.optionals stdenv.isDarwin [ xcbuild.xcbuild ];
     postPatch = ''
       ${patchAwayGrafanaE2E}
+      ${patchGoVersion}
     '';
     buildPhase = ''
       runHook preBuild
@@ -65,16 +73,16 @@ buildGoModule rec {
     dontFixup = true;
     outputHashMode = "recursive";
     outputHash = rec {
-      x86_64-linux = "sha256-3CZgs732c6Z64t2sfWjPAmMFKVTzoolv2TwrbjeRCBA=";
+      x86_64-linux = "sha256-BKvYnXgk7JNkjnka7Co/AfI3d+j/OapXLjS47yoSVPI=";
       aarch64-linux = x86_64-linux;
-      aarch64-darwin = "sha256-NKEajOe9uDZw0MF5leiKBIRH1CHUELRho7gyCa96BO8=";
+      aarch64-darwin = "sha256-Rr3NSHrb8aYt1gEfv2huexA2O/6zVIzdM56pTWSob6s=";
       x86_64-darwin = aarch64-darwin;
     }.${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
   };
 
   disallowedRequisites = [ offlineCache ];
 
-  vendorHash = "sha256-DoaQUftrimCB8bqg2X5txcwJlCJyTQSIXQV6ibF4pgc=";
+  vendorHash = "sha256-gP/lW6CXQpBv9dPRTOV5+vmaqTcq+91X2jls9gDrnm0=";
 
   proxyVendor = true;
 
@@ -82,6 +90,7 @@ buildGoModule rec {
 
   postPatch = ''
     ${patchAwayGrafanaE2E}
+    ${patchGoVersion}
   '';
 
   postConfigure = ''

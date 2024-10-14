@@ -586,10 +586,10 @@ with self; {
 
   AnyEventI3 = buildPerlPackage {
     pname = "AnyEvent-I3";
-    version = "0.17";
+    version = "0.19";
     src = fetchurl {
-      url = "mirror://cpan/authors/id/M/MS/MSTPLBG/AnyEvent-I3-0.17.tar.gz";
-      hash = "sha256-U4LJhMnxODlfKfDACvgaoMj0t2VYIFXHPt5LE/BKbWM=";
+      url = "mirror://cpan/authors/id/M/MS/MSTPLBG/AnyEvent-I3-0.19.tar.gz";
+      hash = "sha256-G807YNs9VWAUjeeRNT6K8RciZPWoXncZe5/8BB2sSDo=";
     };
     propagatedBuildInputs = [ AnyEvent JSONXS ];
     meta = {
@@ -844,10 +844,11 @@ with self; {
     # Use TLS endpoints for downloads and metadata by default
     preConfigure = ''
       substituteInPlace bin/cpanm \
-        --replace http://www.cpan.org https://www.cpan.org \
-        --replace http://backpan.perl.org https://backpan.perl.org \
-        --replace http://fastapi.metacpan.org https://fastapi.metacpan.org \
-        --replace http://cpanmetadb.plackperl.org https://cpanmetadb.plackperl.org
+        --replace-fail http://www.cpan.org https://www.cpan.org \
+        --replace-fail http://cpan.metacpan.org https://cpan.metacpan.org \
+        --replace-fail http://backpan.perl.org https://backpan.perl.org \
+        --replace-fail http://fastapi.metacpan.org https://fastapi.metacpan.org \
+        --replace-fail http://cpanmetadb.plackperl.org https://cpanmetadb.plackperl.org
     '';
     propagatedBuildInputs = [ IOSocketSSL ];
     meta = {
@@ -7287,10 +7288,10 @@ with self; {
 
   DBI = buildPerlPackage {
     pname = "DBI";
-    version = "1.643";
+    version = "1.644";
     src = fetchurl {
-      url = "mirror://cpan/authors/id/T/TI/TIMB/DBI-1.643.tar.gz";
-      hash = "sha256-iiuZPbVgosNzwXTul2pRAn3XgOx2auF2IMIDk9LoNvo=";
+      url = "mirror://cpan/authors/id/H/HM/HMBRAND/DBI-1.644.tar.gz";
+      hash = "sha256-Ipe5neCeZwhmQLWQaZ4OmC+0adpjqT/ijcFHgtt6U8g=";
     };
     postInstall = lib.optionalString (perl ? crossVersion) ''
       mkdir -p $out/${perl.libPrefix}/cross_perl/${perl.version}/DBI
@@ -12848,6 +12849,7 @@ with self; {
       url = "mirror://cpan/authors/id/L/LD/LDS/IO-Interface-1.09.tar.gz";
       hash = "sha256-5j6BxS6x4OYOwtmD9VUtJJPhFxeZJclnV/I8S9n6cTo=";
     };
+    nativeBuildInputs = lib.optionals stdenv.isDarwin [ pkgs.ld-is-cc-hook ];
     meta = {
       description = "Access and modify network interface card configuration";
       license = with lib.licenses; [ artistic1 gpl1Plus ];

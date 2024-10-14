@@ -2,17 +2,17 @@
   lib,
   stdenvNoCC,
   fetchurl,
-  gitUpdater,
+  nix-update-script,
   unzip,
 }:
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "alt-tab-macos";
-  version = "6.69.0";
+  version = "6.73.0";
 
   src = fetchurl {
     url = "https://github.com/lwouis/alt-tab-macos/releases/download/v${finalAttrs.version}/AltTab-${finalAttrs.version}.zip";
-    hash = "sha256-v0HeucpDGdnK0p9zoYUbEBoHzRMlcJBEIIS1vQZ00A0=";
+    hash = "sha256-l/Nuyr5jYBR6LtScgM2LP0mq1NEMkRNVGWZDhiZkAa8=";
   };
 
   sourceRoot = ".";
@@ -28,10 +28,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = gitUpdater {
-    url = "https://github.com/lwouis/alt-tab-macos";
-    rev-prefix = "v";
-  };
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Windows alt-tab on macOS";

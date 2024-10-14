@@ -378,7 +378,7 @@ let
           elm
           elm-format
           elm-instrument
-          # elmi-to-json broken by hashable-time on 2024-03-16
+          elmi-to-json
           ;
       };
 
@@ -575,32 +575,23 @@ let
         compilerNames.ghc8107
       ];
       ghc-lib = lib.subtractLists [
-        compilerNames.ghc981
-        compilerNames.ghc982
         compilerNames.ghc9101
       ] released;
       ghc-lib-parser = lib.subtractLists [
-        compilerNames.ghc981
-        compilerNames.ghc982
         compilerNames.ghc9101
       ] released;
       ghc-lib-parser-ex = lib.subtractLists [
-        compilerNames.ghc981
-        compilerNames.ghc982
         compilerNames.ghc9101
       ] released;
       ghc-source-gen = [
         # Feel free to remove these as they break,
-        # ghc-source-gen currently doesn't support GHC 9.4
         compilerNames.ghc8107
         compilerNames.ghc902
         compilerNames.ghc928
       ];
-      # broken on 2024-03-16
-      # ghc-tags = lib.subtractLists [
-      #   compilerNames.ghc981
-      #   compilerNames.ghc982
-      # ] released;
+      ghc-tags = lib.subtractLists [
+        compilerNames.ghc9101
+      ] released;
       hashable = lib.subtractLists [
         compilerNames.ghc981
         compilerNames.ghc982

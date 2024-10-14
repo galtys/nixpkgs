@@ -61,10 +61,19 @@ in {
     };
 
     extraUpFlags = mkOption {
-      description = "Extra flags to pass to {command}`tailscale up`.";
+      description = ''
+        Extra flags to pass to {command}`tailscale up`. Only applied if `authKeyFile` is specified.";
+      '';
       type = types.listOf types.str;
       default = [];
       example = ["--ssh"];
+    };
+
+    extraSetFlags = mkOption {
+      description = "Extra flags to pass to {command}`tailscale set`.";
+      type = types.listOf types.str;
+      default = [];
+      example = ["--advertise-exit-node"];
     };
 
     extraDaemonFlags = mkOption {
@@ -79,6 +88,7 @@ in {
     environment.systemPackages = [ cfg.package ]; # for the CLI
     systemd.packages = [ cfg.package ];
     systemd.services.tailscaled = {
+      after = lib.mkIf (config.networking.networkmanager.enable) [ "NetworkManager-wait-online.service" ];
       wantedBy = [ "multi-user.target" ];
       path = [
         pkgs.procps     # for collecting running services (opt-in feature)
@@ -117,6 +127,18 @@ in {
         if [[ $status != Connected* ]]; then
           ${cfg.package}/bin/tailscale up --auth-key 'file:${cfg.authKeyFile}' ${escapeShellArgs cfg.extraUpFlags}
         fi
+      '';
+    };
+
+    systemd.services.tailscaled-set = mkIf (cfg.extraSetFlags != []) {
+      after = ["tailscaled.service"];
+      wants = ["tailscaled.service"];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+      };
+      script = ''
+        ${cfg.package}/bin/tailscale set ${escapeShellArgs cfg.extraSetFlags}
       '';
     };
 

@@ -179,7 +179,7 @@ assert withBootloader -> withEfi;
 let
   wantCurl = withRemote || withImportd;
   wantGcrypt = withResolved || withImportd;
-  version = "255.6";
+  version = "255.9";
 
   # Use the command below to update `releaseTimestamp` on every (major) version
   # change. More details in the commentary at mesonFlags.
@@ -197,7 +197,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "systemd";
     repo = "systemd-stable";
     rev = "v${version}";
-    hash = "sha256-ah0678iNfy0c5NhHhjn0roY6RoM8OE0hWyEt+qEGKRQ=";
+    hash = "sha256-fnMvBYyMRQrP2x//8ntGTSwoHOtFk2TQ4S5fwcsSLDU=";
   };
 
   # On major changes, or when otherwise required, you *must* :
@@ -411,7 +411,8 @@ stdenv.mkDerivation (finalAttrs: {
   hardeningDisable = [
     # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111523
     "trivialautovarinit"
-  ];
+    # breaks clang -target bpf; should be fixed to filter target?
+  ] ++ (lib.optional withLibBPF "zerocallusedregs");
 
   nativeBuildInputs =
     [
@@ -499,6 +500,12 @@ stdenv.mkDerivation (finalAttrs: {
     # Use cgroupsv2. This is already the upstream default, but better be explicit.
     (lib.mesonOption "default-hierarchy" "unified")
     (lib.mesonOption "kmod-path" "${kmod}/bin/kmod")
+
+    # Attempts to check /usr/sbin and that fails in macOS sandbox because
+    # permission is denied. If /usr/sbin is not a symlink, it defaults to true.
+    # We set it to false since stdenv moves sbin/* to bin and creates a symlink,
+    # that is, we do not have split bin.
+    (lib.mesonOption "split-bin" "false")
 
     # D-Bus
     (lib.mesonOption "dbuspolicydir" "${placeholder "out"}/share/dbus-1/system.d")
@@ -813,6 +820,9 @@ stdenv.mkDerivation (finalAttrs: {
     for i in $out/share/dbus-1/system-services/*.service; do
       substituteInPlace $i --replace /bin/false ${coreutils}/bin/false
     done
+
+    # For compatibility with dependents that use sbin instead of bin.
+    ln -s bin "$out/sbin"
 
     rm -rf $out/etc/rpm
   '' + lib.optionalString (!withKernelInstall) ''

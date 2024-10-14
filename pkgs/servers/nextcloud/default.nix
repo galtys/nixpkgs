@@ -2,6 +2,7 @@
 , nextcloud27Packages
 , nextcloud28Packages
 , nextcloud29Packages
+, nextcloud30Packages
 }:
 
 let
@@ -14,7 +15,7 @@ let
     inherit version;
 
     src = fetchurl {
-      url = "https://download.nextcloud.com/server/releases/${pname}-${version}.tar.bz2";
+      url = "https://download.nextcloud.com/server/releases/nextcloud-${version}.tar.bz2";
       inherit hash;
     };
 
@@ -43,21 +44,28 @@ let
   };
 in {
   nextcloud27 = generic {
-    version = "27.1.10";
-    hash = "sha256-lD4ScNdxp8gNqisy5ylM6MO3e56u9yrYs4SH1YyFB1Y=";
+    version = "27.1.11";
+    hash = "sha256-Tt0lcPTINEL48PBhb7d07SZjsRz59upJ55WrQ67vlkU=";
     packages = nextcloud27Packages;
+    eol = true;
   };
 
   nextcloud28 = generic {
-    version = "28.0.6";
-    hash = "sha256-3w0zhLRHy6HhKPIggPZ4BSH4aBab6r7o6g0VW/nGa48=";
+    version = "28.0.10";
+    hash = "sha256-LoAVJtKJHBhf6sWYXL084pLOcKQl9Tb5GfkBuftMwhA=";
     packages = nextcloud28Packages;
   };
 
   nextcloud29 = generic {
-    version = "29.0.1";
-    hash = "sha256-dZVG2uz3nKeH7WcFUDaTxttVOqvx165N+neccwmyrak=";
+    version = "29.0.7";
+    hash = "sha256-9TL/wxvlqDdLXgcrhv/4dl7Bn9oMhQnO45hzCB2yxUQ=";
     packages = nextcloud29Packages;
+  };
+
+  nextcloud30 = generic {
+    version = "30.0.0";
+    hash = "sha256-GNeoCVe7U+lPsESS9rUhNDTdo+naEtn3iZl2h8hWTmA=";
+    packages = nextcloud30Packages;
   };
 
   # tip: get the sha with:

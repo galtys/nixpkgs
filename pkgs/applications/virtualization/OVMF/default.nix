@@ -44,6 +44,10 @@
 let
 
   platformSpecific = {
+    i686.msVarsArgs = {
+      flavor = "OVMF";
+      archDir = "Ia32";
+    };
     x86_64.msVarsArgs = {
       flavor = "OVMF_4M";
       archDir = "X64";
@@ -71,8 +75,8 @@ let
 
 in
 
-assert platformSpecific ? ${cpuName};
 assert msVarsTemplate -> fdSize4MB;
+assert msVarsTemplate -> platformSpecific ? ${cpuName};
 assert msVarsTemplate -> platformSpecific.${cpuName} ? msVarsArgs;
 
 edk2.mkDerivation projectDscPath (finalAttrs: {

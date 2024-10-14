@@ -86,14 +86,22 @@ lib.warnIf (!(stdenv.buildPlatform.canExecute stdenv.hostPlatform))
 
 stdenv.mkDerivation rec {
   pname = "frr";
-  version = "10.0";
+  version = "10.0.1";
 
   src = fetchFromGitHub {
     owner = "FRRouting";
     repo = pname;
     rev = "${pname}-${version}";
-    hash = "sha256-vvh9z2hmjvAA7OXgrUmlcrrTE5MRedZzfmhX5FEDKwE=";
+    hash = "sha256-bY5SSF/fmKQc8ECPik0v/ZlUiFsbZhwG2C5pbmoMzwQ=";
   };
+
+  patches = [
+    (fetchpatch {
+      name = "CVE-2024-44070.patch";
+      url = "https://github.com/FRRouting/frr/commit/fea4ed5043b4a523921f970a39a565d2c1ca381f.patch";
+      hash = "sha256-X9FjQeOvo92+mL1z3u5W0LBhhePDAyhFAqh8sAtNNm8=";
+    })
+  ];
 
   nativeBuildInputs = [
     autoreconfHook

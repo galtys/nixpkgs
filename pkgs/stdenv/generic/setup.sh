@@ -830,7 +830,7 @@ substituteStream() {
                 # deprecated 2023-11-22
                 # this will either get removed, or switch to the behaviour of --replace-fail in the future
                 if ! "$_substituteStream_has_warned_replace_deprecation"; then
-                    echo "substituteStream(): WARNING: '--replace' is deprecated, use --replace-{fail,warn,quiet}. ($description)" >&2
+                    echo "substituteStream() in derivation $name: WARNING: '--replace' is deprecated, use --replace-{fail,warn,quiet}. ($description)" >&2
                     _substituteStream_has_warned_replace_deprecation=true
                 fi
                 replace_mode='--replace-warn'
@@ -845,9 +845,9 @@ substituteStream() {
                 if [ "$pattern" != "$replacement" ]; then
                     if [ "${!var}" == "$savedvar" ]; then
                         if [ "$replace_mode" == --replace-warn ]; then
-                            printf "substituteStream(): WARNING: pattern %q doesn't match anything in %s\n" "$pattern" "$description" >&2
+                            printf "substituteStream() in derivation $name: WARNING: pattern %q doesn't match anything in %s\n" "$pattern" "$description" >&2
                         elif [ "$replace_mode" == --replace-fail ]; then
-                            printf "substituteStream(): ERROR: pattern %q doesn't match anything in %s\n" "$pattern" "$description" >&2
+                            printf "substituteStream() in derivation $name: ERROR: pattern %q doesn't match anything in %s\n" "$pattern" "$description" >&2
                             return 1
                         fi
                     fi
@@ -859,11 +859,11 @@ substituteStream() {
                 shift 2
                 # check if the used nix attribute name is a valid bash name
                 if ! [[ "$varName" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-                    echo "substituteStream(): ERROR: substitution variables must be valid Bash names, \"$varName\" isn't." >&2
+                    echo "substituteStream() in derivation $name: ERROR: substitution variables must be valid Bash names, \"$varName\" isn't." >&2
                     return 1
                 fi
                 if [ -z ${!varName+x} ]; then
-                    echo "substituteStream(): ERROR: variable \$$varName is unset" >&2
+                    echo "substituteStream() in derivation $name: ERROR: variable \$$varName is unset" >&2
                     return 1
                 fi
                 pattern="@$varName@"
@@ -879,7 +879,7 @@ substituteStream() {
                 ;;
 
             *)
-                echo "substituteStream(): ERROR: Invalid command line argument: $1" >&2
+                echo "substituteStream() in derivation $name: ERROR: Invalid command line argument: $1" >&2
                 return 1
                 ;;
         esac
@@ -981,7 +981,13 @@ substituteAllInPlace() {
 # the environment used for building.
 dumpVars() {
     if [ "${noDumpEnvVars:-0}" != 1 ]; then
-        export 2>/dev/null >| "$NIX_BUILD_TOP/env-vars" || true
+        # On darwin, install(1) cannot be called with /dev/stdin or fd from process substitution
+        # so first we create the file and then write to it
+        # See https://github.com/NixOS/nixpkgs/issues/335016
+        {
+            install -m 0600 /dev/null "$NIX_BUILD_TOP/env-vars" &&
+            export 2>/dev/null >| "$NIX_BUILD_TOP/env-vars"
+        } || true
     fi
 }
 

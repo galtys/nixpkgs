@@ -4,24 +4,26 @@
 , gmp
 , less
 , makeWrapper
+, libb2
 , ncurses6
+, openssl
 , stdenv
 , zlib
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "unison-code-manager";
-  version = "0.5.19";
+  version = "0.5.27";
 
   src = if stdenv.isDarwin then
     fetchurl {
       url = "https://github.com/unisonweb/unison/releases/download/release/${finalAttrs.version}/ucm-macos.tar.gz";
-      hash = "sha256-//bjpmW45BqBHmBIj2uMahYQYjhNJ8hvGh+O/7oYQOk=";
+      hash = "sha256-bmEmox+CfkGZP9GCfwDyspTult0WV+6jfQzehT33p8U=";
     }
   else
     fetchurl {
       url = "https://github.com/unisonweb/unison/releases/download/release/${finalAttrs.version}/ucm-linux.tar.gz";
-      hash = "sha256-3WyiV6mIuo5GDpDK/KdWMvj22sZ3uph15u3v3TX5YZA=";
+      hash = "sha256-js7MgzJQShy6z1QNsIRwjtZfrNOGwUA001SWlKWgMoA=";
     };
 
   # The tarball is just the prebuilt binary, in the archive root.
@@ -31,14 +33,17 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [ makeWrapper ]
     ++ lib.optional (!stdenv.isDarwin) autoPatchelfHook;
-  buildInputs = lib.optionals (!stdenv.isDarwin) [ ncurses6 zlib gmp ];
+  buildInputs = lib.optionals (!stdenv.isDarwin) [ gmp ncurses6 zlib ];
 
   installPhase = ''
-    mkdir -p $out/bin
-    mv ucm $out/bin
+    mkdir -p $out/{bin,lib}
+    mv runtime $out/lib/runtime
     mv ui $out/ui
-    wrapProgram $out/bin/ucm \
+    mv unison $out/unison
+    makeWrapper $out/unison/unison $out/bin/ucm \
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libb2 openssl ]} \
       --prefix PATH ":" "${lib.makeBinPath [ less ]}" \
+      --add-flags "--runtime-path $out/lib/runtime/bin/unison-runtime" \
       --set UCM_WEB_UI "$out/ui"
   '';
 

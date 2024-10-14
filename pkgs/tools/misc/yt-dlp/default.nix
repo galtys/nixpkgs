@@ -10,6 +10,7 @@
 , pycryptodomex
 , websockets
 , mutagen
+, pythonRelaxDepsHook
 , requests
 , secretstorage
 , urllib3
@@ -25,17 +26,18 @@ buildPythonPackage rec {
   # The websites yt-dlp deals with are a very moving target. That means that
   # downloads break constantly. Because of that, updates should always be backported
   # to the latest stable release.
-  version = "2024.5.27";
+  version = "2024.10.7";
   pyproject = true;
 
   src = fetchPypi {
     inherit version;
     pname = "yt_dlp";
-    hash = "sha256-NWbA3iQNDNPRwihc5lX3LKON/GGNY01GgYsA2J1SiL4=";
+    hash = "sha256-C68atRfJdI1+M3ztkcVUPDb8FiRqnr7awy6/IMGZjOs=";
   };
 
   build-system = [
     hatchling
+    pythonRelaxDepsHook
   ];
 
   dependencies = [
@@ -44,9 +46,14 @@ buildPythonPackage rec {
     mutagen
     pycryptodomex
     requests
-    secretstorage  # "optional", as in not in requirements.txt, needed for `--cookies-from-browser`
+    secretstorage # "optional", as in not in requirements.txt, needed for `--cookies-from-browser`
     urllib3
     websockets
+  ];
+
+  pythonRelaxDeps = [
+    "requests"
+    "websockets"
   ];
 
   # Ensure these utilities are available in $PATH:
@@ -55,12 +62,15 @@ buildPythonPackage rec {
   # - atomicparsley: embedding thumbnails
   makeWrapperArgs =
     let
-      packagesToBinPath = []
+      packagesToBinPath =
+        [ ]
         ++ lib.optional atomicparsleySupport atomicparsley
         ++ lib.optional ffmpegSupport ffmpeg
         ++ lib.optional rtmpSupport rtmpdump;
-    in lib.optionals (packagesToBinPath != [])
-    [ ''--prefix PATH : "${lib.makeBinPath packagesToBinPath}"'' ];
+    in
+    lib.optionals (packagesToBinPath != [ ]) [
+      ''--prefix PATH : "${lib.makeBinPath packagesToBinPath}"''
+    ];
 
   setupPyBuildFlags = [
     "build_lazy_extractors"
@@ -73,7 +83,10 @@ buildPythonPackage rec {
     ln -s "$out/bin/yt-dlp" "$out/bin/youtube-dl"
   '';
 
-  passthru.updateScript = [ update-python-libraries (toString ./.) ];
+  passthru.updateScript = [
+    update-python-libraries
+    (toString ./.)
+  ];
 
   meta = with lib; {
     homepage = "https://github.com/yt-dlp/yt-dlp/";
@@ -88,7 +101,10 @@ buildPythonPackage rec {
     '';
     changelog = "https://github.com/yt-dlp/yt-dlp/releases/tag/${version}";
     license = licenses.unlicense;
-    maintainers = with maintainers; [ mkg20001 SuperSandro2000 ];
+    maintainers = with maintainers; [
+      mkg20001
+      SuperSandro2000
+    ];
     mainProgram = "yt-dlp";
   };
 }

@@ -32,6 +32,13 @@ let
           (stdenv.hostPlatform.isPower && stdenv.hostPlatform.is64bit) ||
           (stdenv.hostPlatform.isMips && stdenv.hostPlatform.is64bit));
 
+  forceRust = features.rust or false;
+  kernelSupportsRust = lib.versionAtLeast version "6.7";
+
+  # Currently not enabling Rust by default, as upstream requires rustc 1.81
+  defaultRust = false;
+  withRust = (forceRust || defaultRust) && kernelSupportsRust;
+
   options = {
 
     debug = {
@@ -140,6 +147,7 @@ let
 
       # Required to bring up some Bay Trail devices properly
       I2C                              = yes;
+      I2C_DESIGNWARE_CORE              = yes;
       I2C_DESIGNWARE_PLATFORM          = yes;
       PMIC_OPREGION                    = whenAtLeast "5.10" yes;
       INTEL_SOC_PMIC                   = whenAtLeast "5.10" yes;
@@ -435,13 +443,14 @@ let
       DRM_GMA500             = whenAtLeast "5.12" module;
       DRM_GMA600             = whenOlder "5.13" yes;
       DRM_GMA3600            = whenOlder "5.12" yes;
-      DRM_VMWGFX_FBCON       = whenOlder "6.2" yes;
+      DRM_VMWGFX_FBCON       = whenOlder "6.1" yes;
       # (experimental) amdgpu support for verde and newer chipsets
       DRM_AMDGPU_SI = yes;
       # (stable) amdgpu support for bonaire and newer chipsets
       DRM_AMDGPU_CIK = yes;
       # Allow device firmware updates
-      DRM_DP_AUX_CHARDEV = yes;
+      DRM_DP_AUX_CHARDEV = whenOlder "6.10" yes;
+      DRM_DISPLAY_DP_AUX_CHARDEV = whenAtLeast "6.10" yes;
       # amdgpu display core (DC) support
       DRM_AMD_DC_DCN1_0 = whenOlder "5.6" yes;
       DRM_AMD_DC_DCN2_0 = whenBetween "5.3" "5.6" yes;
@@ -458,6 +467,9 @@ let
       # Enable AMD secure display when available
       DRM_AMD_SECURE_DISPLAY = whenAtLeast "5.13" yes;
 
+      # Enable AMD image signal processor
+      DRM_AMD_ISP = whenAtLeast "6.11" yes;
+
       # Enable new firmware (and by extension NVK) for compatible hardware on Nouveau
       DRM_NOUVEAU_GSP_DEFAULT = whenAtLeast "6.8" yes;
 
@@ -470,7 +482,8 @@ let
       MEDIA_CEC_RC = whenAtLeast "5.10" yes;
 
       # Enable CEC over DisplayPort
-      DRM_DP_CEC = yes;
+      DRM_DP_CEC = whenOlder "6.10" yes;
+      DRM_DISPLAY_DP_AUX_CEC = whenAtLeast "6.10" yes;
     } // optionalAttrs (stdenv.hostPlatform.system == "x86_64-linux") {
       # Intel GVT-g graphics virtualization supports 64-bit only
       DRM_I915_GVT = yes;
@@ -482,14 +495,16 @@ let
       DRM_VC4_HDMI_CEC = yes;
     };
 
-    # Enables Rust support in the Linux kernel. This is currently not enabled by default, because it occasionally requires
-    # patching the Linux kernel for the specific Rust toolchain in nixpkgs. These patches usually take a bit
-    # of time to appear and this would hold up Linux kernel and Rust toolchain updates.
-    #
-    # Once Rust in the kernel has more users, we can reconsider enabling it by default.
-    rust = optionalAttrs ((features.rust or false) && versionAtLeast version "6.7") {
+    # Enable Rust and features that depend on it
+    rust = lib.optionalAttrs withRust {
       RUST = yes;
-      GCC_PLUGINS = no;
+
+      # These don't technically require Rust but we probably want to get some more testing
+      # on the whole DRM panic setup before shipping it by default.
+      DRM_PANIC = whenAtLeast "6.12" yes;
+      DRM_PANIC_SCREEN = whenAtLeast "6.12" (freeform "kmsg");
+
+      DRM_PANIC_SCREEN_QR_CODE = whenAtLeast "6.12" yes;
     };
 
     sound = {
@@ -505,6 +520,7 @@ let
       # Support configuring jack functions via fw mechanism at boot
       SND_HDA_PATCH_LOADER = yes;
       SND_HDA_CODEC_CA0132_DSP = whenOlder "5.7" yes; # Enable DSP firmware loading on Creative Soundblaster Z/Zx/ZxR/Recon
+      SND_HDA_CODEC_CS8409 = whenAtLeast "6.6" module; # Cirrus Logic HDA Bridge CS8409
       SND_OSSEMUL         = yes;
       SND_USB_CAIAQ_INPUT = yes;
       SND_USB_AUDIO_MIDI_V2 = whenAtLeast "6.5" yes;
@@ -615,8 +631,8 @@ let
       F2FS_FS_COMPRESSION = whenAtLeast "5.6" yes;
       UDF_FS              = module;
 
-      NFSD_V2_ACL            = whenOlder "5.15" yes;
-      NFSD_V3                = whenOlder "5.15" yes;
+      NFSD_V2_ACL            = whenOlder "5.10" yes;
+      NFSD_V3                = whenOlder "5.10" yes;
       NFSD_V3_ACL            = yes;
       NFSD_V4                = yes;
       NFSD_V4_SECURITY_LABEL = yes;
@@ -627,6 +643,7 @@ let
       NFS_V4_1              = yes;  # NFSv4.1 client support
       NFS_V4_2              = yes;
       NFS_V4_SECURITY_LABEL = yes;
+      NFS_LOCALIO           = whenAtLeast "6.12" yes;
 
       CIFS_XATTR        = yes;
       CIFS_POSIX        = option yes;
@@ -717,6 +734,10 @@ let
       # Enable stack smashing protections in schedule()
       # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?h=v4.8&id=0d9e26329b0c9263d4d9e0422d80a0e73268c52f
       SCHED_STACK_END_CHECK            = yes;
+
+      # Enable separate slab buckets for user controlled allocations
+      # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=67f2df3b82d091ed095d0e47e1f3a9d3e18e4e41
+      SLAB_BUCKETS = whenAtLeast "6.11" yes;
     } // optionalAttrs stdenv.hostPlatform.isx86_64 {
       # Enable Intel SGX
       X86_SGX     = whenAtLeast "5.11" yes;
@@ -874,6 +895,12 @@ let
       ZRAM                          = module;
       ZRAM_WRITEBACK                = option yes;
       ZRAM_MULTI_COMP               = whenAtLeast "6.2" yes;
+      ZRAM_BACKEND_842              = whenAtLeast "6.12" yes;
+      ZRAM_BACKEND_DEFLATE          = whenAtLeast "6.12" yes;
+      ZRAM_BACKEND_LZ4              = whenAtLeast "6.12" yes;
+      ZRAM_BACKEND_LZ4HC            = whenAtLeast "6.12" yes;
+      ZRAM_BACKEND_LZO              = whenAtLeast "6.12" yes;
+      ZRAM_BACKEND_ZSTD             = whenAtLeast "6.12" yes;
       ZRAM_DEF_COMP_ZSTD            = whenAtLeast "5.11" yes;
       ZSWAP                         = option yes;
       ZSWAP_COMPRESSOR_DEFAULT_ZSTD = whenAtLeast "5.7" (mkOptionDefault yes);
@@ -927,8 +954,10 @@ let
       # i686 issues: https://github.com/NixOS/nixpkgs/pull/117961#issuecomment-812106375
       useZstd = stdenv.buildPlatform.is64bit && versionAtLeast version "5.9";
     in {
-      KERNEL_XZ            = mkIf (!useZstd) yes;
-      KERNEL_ZSTD          = mkIf useZstd yes;
+      # stdenv.hostPlatform.linux-kernel.target assumes uncompressed on RISC-V.
+      KERNEL_UNCOMPRESSED  = mkIf stdenv.hostPlatform.isRiscV yes;
+      KERNEL_XZ            = mkIf (!stdenv.hostPlatform.isRiscV && !useZstd) yes;
+      KERNEL_ZSTD          = mkIf (!stdenv.hostPlatform.isRiscV && useZstd) yes;
 
       HID_BATTERY_STRENGTH = yes;
       # enabled by default in x86_64 but not arm64, so we do that here
@@ -950,7 +979,11 @@ let
       THRUSTMASTER_FF    = yes;
       ZEROPLUS_FF        = yes;
 
-      MODULE_COMPRESS      = whenOlder "5.13" yes;
+      MODULE_COMPRESS      = lib.mkMerge [
+        (whenOlder "5.13" yes)
+        (whenAtLeast "6.12" yes)
+      ];
+      MODULE_COMPRESS_ALL  = whenAtLeast "6.12" yes;
       MODULE_COMPRESS_XZ   = yes;
 
       SYSVIPC            = yes;  # System-V IPC
@@ -1147,6 +1180,7 @@ let
       LIRC = yes;
 
       SCHED_CORE = whenAtLeast "5.14" yes;
+      SCHED_CLASS_EXT = whenAtLeast "6.12" yes;
 
       LRU_GEN = whenAtLeast "6.1"  yes;
       LRU_GEN_ENABLED =  whenAtLeast "6.1" yes;
