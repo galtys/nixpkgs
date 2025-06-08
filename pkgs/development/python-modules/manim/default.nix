@@ -48,6 +48,10 @@
   pytest-xdist,
   pytestCheckHook,
   versionCheckHook,
+
+  sympy,
+  dataclasses-json,
+  
 }:
 
 let
@@ -241,6 +245,9 @@ buildPythonPackage rec {
     tqdm
     typing-extensions
     watchdog
+    sympy
+    dataclasses-json
+    
   ];
 
   optional-dependencies = {
