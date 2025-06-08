@@ -34,7 +34,7 @@
   rich,
   scipy,
   sympy,
-  dataclasses_json,
+  dataclasses-json,
   screeninfo,
   skia-pathops,
   srt,
@@ -235,7 +235,7 @@ buildPythonPackage rec {
     pygments
     rich
     scipy
-    dataclasses_json
+    dataclasses-json
     sympy
     screeninfo
     skia-pathops
