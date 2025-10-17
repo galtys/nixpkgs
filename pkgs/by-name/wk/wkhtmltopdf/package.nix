@@ -86,7 +86,8 @@ let
       url = "https://github.com/wkhtmltopdf/packaging/releases/download/${version}/wkhtmltox_${version}.jammy_amd64.deb";
       #url = "https://github.com/wkhtmltopdf/packaging/releases/download/${version}/wkhtmltox_${version}.bookworm_amd64.deb";
       #url = https://github.com/wkhtmltopdf/packaging/releases/download/${version}/wkhtmltox_${version}.jammy_amd64.deb;
-      hash = "sha256-mLoNFXtQ028jvQ3t9MCqKMewxQ/NzcVKpba7uoGaaaa=";
+      #hash = "sha256-mLoNFXtQ028jvQ3t9MCqKMewxQ/NzcVKpba7uoGaaaa=";
+      hash = "sha256-T3I7JpGthjip35YOBCHTRtcxUIPjWDozTzM2IoDduhU=";
     };
   } // _linuxAttrs;
 in
