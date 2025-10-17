@@ -83,8 +83,9 @@ let
   linuxAttrs.x86_64-linux = rec {
     version = "0.12.6.1-3";
     src = fetchurl {
-      url = "https://github.com/wkhtmltopdf/packaging/releases/download/${version}/wkhtmltox_${version}.bookworm_amd64.deb";
-      hash = "sha256-mLoNFXtQ028jvQ3t9MCqKMewxQ/NzcVKpba7uoGjlB0=";
+      #url = "https://github.com/wkhtmltopdf/packaging/releases/download/${version}/wkhtmltox_${version}.bookworm_amd64.deb";
+      url = https://github.com/wkhtmltopdf/packaging/releases/download/${version}/wkhtmltox_${version}.jammy_amd64.deb;
+      hash = "sha256-mLoNFXtQ028jvQ3t9MCqKMewxQ/NzcVKpba7uoGaaaa=";
     };
   } // _linuxAttrs;
 in
